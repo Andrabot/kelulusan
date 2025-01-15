@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalender</title>
+    <style>
+        /* CSS yang sudah ada */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .calendar-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .countdown {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .month {
+            margin-bottom: 20px;
+        }
+        .month-header {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px 5px 0 0;
+        }
+        .days-of-week, .days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+        }
+        .days-of-week .day, .days .day {
+            padding: 15px 0;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+        .days-of-week .day {
+            background-color: #f7f7f7;
+            font-weight: bold;
+        }
+        .days .day {
+            min-height: 60px;
+            line-height: 1.5;
+        }
+        .day:hover {
+            background-color: #e9e9e9;
+        }
+        .today {
+            background-color: #007b7f;
+            color: white;
+            font-weight: bold;
+        }
+        .days {
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .holiday {
+            background-color: red;
+            color: white;
+            font-weight: bold;
+        }
+        .toggle-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .toggle-button:hover {
+            background-color: #0056b3;
+        }
+        .external-link-button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: block;
+            width: 100%;
+        }
+        .external-link-button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calendar-container" id="calendar">
+        <!-- Kalender dan tombol akan tampil di sini -->
+    </div>
+
+    <script>
+        const months = [
+            'Januari', 'Februari', 'Maret', 'April', 'Mei'
+        ];
+        
+        const daysOfWeek = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth();
+        const currentDay = currentDate.getDate();
+
+        const targetDate = new Date(currentYear, 4, 6); // Target date: 6 Mei 2025
+
+        let isWorkingDaysOnly = false; // Default: hitung dengan hari libur
+
+        // Saldo dimulai dari 1.099.000
+        let totalSaldo = 1180000;
+
+        // Daftar hari libur nasional dalam format [bulan-1, tanggal]
+        const holidays = [
+            [0, 1],   // 1 Januari 2025 - Tahun Baru Masehi
+            [0, 27],  // 27 Januari 2025 - Isra Mikraj Nabi Muhammad SAW
+            [0, 28],  // 28 Januari 2025 - Cuti bersama Tahun Baru Imlek
+            [0, 29],  // 29 Januari 2025 - Libur nasional Tahun Baru Imlek
+            [2, 28],  // 28 Maret 2025 - Cuti bersama Hari Suci Nyepi
+            [2, 29],  // 29 Maret 2025 - Libur nasional Hari Suci Nyepi
+            [2, 31],  // 31 Maret 2025 - Libur nasional Idulfitri
+            [3, 1],   // 1 April 2025 - Libur nasional Idulfitri
+            [3, 2],   // 2 April 2025 - Cuti bersama Idulfitri
+            [3, 3],   // 3 April 2025 - Cuti bersama Idulfitri
+            [3, 4],   // 4 April 2025 - Cuti bersama Idulfitri
+            [3, 7],   // 7 April 2025 - Cuti bersama Idulfitri
+            [3, 18],  // 18 April 2025 - Libur nasional Waisak
+            [3, 20],  // 20 April 2025 - Libur nasional Kebangkitan Yesus Kristus
+            [4, 1],   // 1 Mei 2025 - Libur nasional Hari Buruh Internasional
+            [4, 12],  // 12 Mei 2025 - Libur nasional Hari Raya Waisak
+            [4, 13],  // 13 Mei 2025 - Cuti bersama Hari Raya Waisak
+            [4, 29],  // 29 Mei 2025 - Libur nasional Kenaikan Yesus Kristus
+            [4, 30],  // 30 Mei 2025 - Cuti bersama Kenaikan Yesus Kristus
+        ];
+
+        // Fungsi untuk menghitung saldo berdasarkan hari aktif
+        // Fungsi untuk menghitung saldo berdasarkan hari aktif
+function calculateSaldo() {
+    const startDate = new Date(2025, 0, 1); // Mulai dari 1 Januari 2025
+    let current = new Date(startDate);
+    let saldo = totalSaldo;
+
+    // Loop hingga tanggal hari ini
+    while (current <= currentDate) {
+        const isWeekend = current.getDay() === 0 || current.getDay() === 6; // Sabtu dan Minggu
+        const isHoliday = holidays.some(holiday => holiday[0] === current.getMonth() && holiday[1] === current.getDate());
+
+        // Hanya hitung hari kerja (Senin sampai Jumat) yang bukan hari libur
+        if (!isWeekend && !isHoliday) {
+            saldo += 20000; // Tambah 20k setiap hari kerja aktif
+        }
+
+        current.setDate(current.getDate() + 1); // Pindah ke hari berikutnya
+    }
+
+    // Mengurangi 180.000 untuk menyesuaikan dengan saldo yang diinginkan di tampilan
+    saldo -= 180000;
+
+    return saldo;
+}
+
+
+        // Fungsi untuk menghitung sisa hari (termasuk atau tidak hari libur)
+        function calculateCountdown() {
+            const timeDifference = targetDate - currentDate;
+            let daysRemaining = Math.ceil(timeDifference / (1000 * 3600 * 24));
+
+            if (isWorkingDaysOnly) {
+                daysRemaining = countWorkingDays(currentDate, targetDate);
+            }
+
+            return daysRemaining;
+        }
+
+        // Fungsi untuk menghitung hari kerja antara dua tanggal
+        function countWorkingDays(startDate, endDate) {
+            let count = 0;
+            let currentDate = new Date(startDate);
+
+            while (currentDate <= endDate) {
+                // Cek apakah hari adalah Senin sampai Jumat
+                if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+                    count++;
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            return count;
+        }
+
+        // Fungsi untuk membuat kalender
+        function generateCalendar() {
+            const countdownText = `Sisa hari menuju 6 Mei 2025: ${calculateCountdown()} hari`;
+            const saldoText = `Total saldo: Rp${calculateSaldo().toLocaleString()}`; // Menampilkan saldo
+            let html = `<div class="countdown"><span>${countdownText}</span><button class="toggle-button" onclick="toggleCountdownMode()">Toggle Mode</button></div>`;
+            html += `<div class="saldo">${saldoText}</div>`; // Menambahkan saldo
+            for (let monthIndex = 0; monthIndex <= 4; monthIndex++) {
+                html += `<div class="month">`;
+                html += `<div class="month-header">${months[monthIndex]} ${currentYear}</div>`;
+                html += `<div class="days-of-week">`;
+                daysOfWeek.forEach(day => {
+                    html += `<div class="day">${day}</div>`;
+                });
+                html += `</div>`;
+                html += createMonthDays(monthIndex);
+                html += `</div>`;
+            }
+
+            // Menambahkan tombol menuju web lain
+            html += `<button class="external-link-button" onclick="window.location.href='kalkulator.html'">Kalkulator</button>`;
+            document.getElementById('calendar').innerHTML = html;
+        }
+
+        // Fungsi untuk menghasilkan hari-hari dalam bulan
+        function createMonthDays(monthIndex) {
+            const daysInMonth = new Date(currentYear, monthIndex + 1, 0).getDate();
+            const firstDayOfMonth = new Date(currentYear, monthIndex, 1).getDay();
+            let html = '<div class="days">';
+            
+            // Kosongkan hari sebelum tanggal pertama
+            for (let i = 0; i < (firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1); i++) {
+                html += `<div class="day"></div>`;
+            }
+            
+            // Tambahkan tanggal-tanggal
+            for (let day = 1; day <= daysInMonth; day++) {
+                const isToday = (monthIndex === currentMonth && day === currentDay);
+                const isHoliday = holidays.some(holiday => holiday[0] === monthIndex && holiday[1] === day);
+                const holidayClass = isHoliday ? 'holiday' : '';
+                html += `<div class="day ${isToday ? 'today' : ''} ${holidayClass}">${day}</div>`;
+            }
+            html += `</div>`;
+            return html;
+        }
+
+        // Fungsi untuk toggle mode hitung mundur
+        function toggleCountdownMode() {
+            isWorkingDaysOnly = !isWorkingDaysOnly;
+            generateCalendar();
+        }
+
+        generateCalendar();
+    </script>
+</body>
+</html>
